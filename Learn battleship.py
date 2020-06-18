@@ -66,5 +66,5 @@ confusao.fit(data, cl_data)
 confusao.score(teste, cl_teste)
 confusao.poof()
 
-with open(r'C:\Users\RENÊ MICHEL\nv.pickle','wb')as f:
+with open('C:\\Users\\RENÊ MICHEL\\Desktop\\Codigos\\Python\\Batalha Naval\\nv.pickle','wb')as f:
     pickle.dump((modelo),f)
