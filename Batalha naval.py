@@ -68,7 +68,6 @@ class Matriz:
 
     
     def verify_pos(self,location):
-        print(self.matriz[0],location)
         x=self.matriz[0].index(location[0])
         y=location[1]
 
@@ -250,7 +249,6 @@ class IA:
             else:
                 return (letters[x-1],y)
         elif previsao==3:
-            print(x,y)
             if y>1 and x<13 and self.last_choices.count((letters[x+1],y-1))==0:
                 return (letters[x+1],y-1)
             elif y>1 and x>1 and self.last_choices.count((letters[x-1],y-1))==0:
@@ -280,10 +278,10 @@ class IA:
         if entry[0]:
             self.shot_choices.append((entry[1],entry[2]))
             self.acertos+=1
-        elif self.shot_choices!=[] and not entry[0]:
-            self.cont+1
+        else:
+            self.cont+=1
 
-        if self.cont==8:
+        if self.cont==6:
             self.cont=0
             self.shot_choices.clear()
 
@@ -449,6 +447,7 @@ while True:
         p2.get_turn((False,pos[0],pos[1]))
         if p2.shot_choices!=[]:
             m_player.get_erro(pos)
+    print(p2.shot_choices)
 
     
     pos_ia=ia.atack_ia(deepcopy(m_enemy.m_check))
