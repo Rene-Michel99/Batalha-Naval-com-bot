@@ -181,20 +181,16 @@ class Matriz:
                 self.matriz[y-1][x]=navio[1]
                 self.matriz[y+1][x]=navio[1]
 
-class IA:
-    def __init__(self,modelo):
+class NV:
+    def __init__(self):
         self.shot_choices=[]
         self.last_choices=[]
         self.cont=0
         self.acertos=0
         self.route=''
-        self.act=modelo
-        if modelo=='nv':
-            with open('nv.pickle','rb') as f:
-                self.model=pickle.load(f)
-        else:
-            with open('knn.pickle','rb') as f:
-                self.model=pickle.load(f)
+        
+        with open('nv.pickle','rb') as f:
+            self.model=pickle.load(f)
         
     def random_pos(self):
         from random import randint
@@ -242,71 +238,9 @@ class IA:
         
         return new_matrix
 
-    def translate_matrix2(self,matriz):
-        new_matrix=[]
-        matriz=matriz[1:]
-        lines=[]
-        
-        for row in matriz:
-            st=''
-            row=row[1:]
-            li=[]
-            for col in row:
-                st=col
-                if st=='▒':
-                    st=0
-                elif st=='N':
-                    st=6
-                elif st=='X':
-                    st=1
-                li.append(st)
-            lines.append(li)
-        
-        letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
-
-        x=self.shot_choices[0][0]
-        x=letters.index(x)
-        y=self.shot_choices[0][1]
-
-        
-        '''
-        for row in lines:
-            new_row=[]
-            if row.count(1)>0:
-                ini=row.index(1)
-                new_row=row[ini:ini+5]
-                if row[ini-1]==6:
-                    new_row.pop()
-                    new_row=[6]+new_row
-                if len(new_row)<5:
-                    new_row=[0]*(5-len(new_row))+new_row
-            else:
-                new_row=[0 for _ in range(0,5)]
-            new_matrix.append(new_row)'''
-
-        for i,row in enumerate(lines):
-            new_row=[]
-            if i==y:
-                new_row=row[x:x+5]
-                if  row[x-1]==6 or row[x-1]==1:
-                    new_row.pop()
-                    new_row=[row[x-1]]+new_row
-                if len(new_row)<5:
-                    new_row=[0]*(5-len(new_row))+new_row
-
-                print(letters[x],i)
-                print(new_row)
-            else:
-                new_row=[0 for _ in range(0,5)]
-            new_matrix.append(new_row)
-        return new_matrix
-
     def get_last_gotcha(self,matriz):
         matrix=[]
-        if self.act=='nv':
-            matrix=self.translate_matrix(matriz)
-        else:
-            matrix=self.translate_matrix2(matriz)
+        matrix=self.translate_matrix(matriz)
         gotchas=self.shot_choices
 
         letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
@@ -364,7 +298,145 @@ class IA:
             self.cont=0
             self.shot_choices.clear()
 
+
+class KNN:
+    def __init__(self):
+        self.shot_choices=[]
+        self.last_choices=[]
+        self.cont=0
+        self.acertos=0
+        self.route=''
         
+        with open('knn.pickle','rb') as f:
+            self.model=pickle.load(f)
+        
+    def random_pos(self):
+        from random import randint
+        from random import choice
+
+        y=randint(1,15)
+        x=choice(['A','B','C','D','E','F','G','H','I','J','K','L','M','N'])
+        if self.last_choices==[]:
+            return (x,y)
+        while True:
+            y=randint(1,15)
+            x=choice(['A','B','C','D','E','F','G','H','I','J','K','L','M','N'])
+            if self.last_choices.count((x,y))==0:
+                return (x,y)
+    
+    def atack_ia(self,matriz=[]):
+        
+        if len(self.shot_choices)==0:
+            return self.random_pos()
+        else:
+            return self.get_last_gotcha(matriz)
+
+    def translate_matrix(self,matriz):
+        new_matrix=[]
+        matriz=matriz[1:]
+        lines=[]
+        
+        for row in matriz:
+            st=''
+            row=row[1:]
+            li=[]
+            for col in row:
+                st=col
+                if st=='▒':
+                    st=0
+                elif st=='N':
+                    st=6
+                elif st=='X':
+                    st=1
+                li.append(st)
+            lines.append(li)
+        
+        letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+
+        x=self.shot_choices[0][0]
+        x=letters.index(x)
+        y=self.shot_choices[0][1]
+
+        for i,row in enumerate(lines):
+            new_row=[]
+            if i==y:
+                if i==0:
+                    new_row=row[x:x+5]
+                elif i==1:
+                    new_row=row[x-1:x+5]
+                else:
+                    new_row=row[x-2:x+4]
+                
+                if len(new_row)<6:
+                    new_row=[0]*(6-len(new_row))+new_row
+
+                print(letters[x],i)
+                print(new_row)
+            else:
+                new_row=[0 for _ in range(0,6)]
+            new_matrix.append(new_row)
+        return new_matrix
+
+    def get_last_gotcha(self,matriz):
+        matrix=[]
+        matrix=self.translate_matrix(matriz)
+
+        gotchas=self.shot_choices
+
+        letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+
+        x=letters.index(gotchas[len(gotchas)-1][0])
+        y=gotchas[len(gotchas)-1][1]
+        
+        #previsao=sorted(self.model.predict(matrix))
+        #previsao=previsao.pop()
+        previsao=self.model.predict(matrix)
+
+        if y==15:
+            y-=1
+        previsao=previsao[y]
+
+        if previsao>0 and previsao<3:
+            return (letters[x+1],y)
+        elif previsao<0:
+            return (letters[x-1],y)
+        elif previsao==3:
+            if y>1 and x<13 and self.last_choices.count((letters[x+1],y-1))==0:
+                return (letters[x+1],y-1)
+            elif y<15 and x<13 and self.last_choices.count((letters[x+1],y+1))==0:
+                return (letters[x+1],y+1)
+        elif previsao==-3:
+            if y<15 and x>1 and self.last_choices.count((letters[x-1],y+1))==0:
+                return (letters[x-1],y+1)
+            elif y>1 and x>1 and self.last_choices.count((letters[x-1],y-1))==0:
+                return (letters[x-1],y-1)
+        elif previsao==4:
+            if y<15 and x>1 and self.last_choices.count((letters[x+1],y))>0:
+                return ((letters[x-1],y+1))
+            elif y<15 and x<13 and self.last_choices.count((letters[x-1],y))>0:
+                return ((letters[x+1],y+1))
+        
+        return self.random_pos()
+                
+        
+    def get_gotcha(self):
+        for item in self.last_choices:
+            if item[0]:
+                return True
+        return False
+
+    def get_turn(self,entry):
+        self.last_choices.append((entry[1],entry[2]))
+
+        if entry[0]:
+            self.shot_choices.append((entry[1],entry[2]))
+            self.acertos+=1
+        else:
+            self.cont+=1
+
+        if self.cont==6:
+            self.cont=0
+            self.shot_choices.clear()
 
 
 def choose_navios():
@@ -485,8 +557,8 @@ for i,navio in enumerate(ch_navios):
     m_player.insert(navios[navio],pos[i],0)
 m_player.map_navs()
 
-p1=IA('nv')
-p2=IA('knn')
+p1=NV()
+p2=KNN()
 rounds=0
 
 from copy import deepcopy
