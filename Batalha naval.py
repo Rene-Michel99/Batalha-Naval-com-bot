@@ -29,6 +29,14 @@ class Matriz:
                 arq.write(col+' ')
             arq.write('\n')
         arq.close()
+
+    def count_erros(self):
+        count=0
+        for row in self.m_check:
+            for col in row:
+                if col=='N':
+                    count+=1
+        return count
     
     def draw_two(self):
         print(self.identifier)
@@ -174,15 +182,19 @@ class Matriz:
                 self.matriz[y+1][x]=navio[1]
 
 class IA:
-    def __init__(self):
+    def __init__(self,modelo):
         self.shot_choices=[]
         self.last_choices=[]
         self.cont=0
         self.acertos=0
         self.route=''
-
-        with open('nv.pickle','rb') as f:
-            self.model=pickle.load(f)
+        self.act=modelo
+        if modelo=='nv':
+            with open('nv.pickle','rb') as f:
+                self.model=pickle.load(f)
+        else:
+            with open('knn.pickle','rb') as f:
+                self.model=pickle.load(f)
         
     def random_pos(self):
         from random import randint
@@ -209,9 +221,9 @@ class IA:
         new_matrix=[]
         matriz=matriz[1:]
         lines=[]
-        li=[]
         for row in matriz:
             st=''
+            li=[]
             row=row[1:]
             for col in row:
                 st=col
@@ -229,10 +241,72 @@ class IA:
             new_matrix.append([soma])
         
         return new_matrix
-                
+
+    def translate_matrix2(self,matriz):
+        new_matrix=[]
+        matriz=matriz[1:]
+        lines=[]
+        
+        for row in matriz:
+            st=''
+            row=row[1:]
+            li=[]
+            for col in row:
+                st=col
+                if st=='▒':
+                    st=0
+                elif st=='N':
+                    st=6
+                elif st=='X':
+                    st=1
+                li.append(st)
+            lines.append(li)
+        
+        letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+
+        x=self.shot_choices[0][0]
+        x=letters.index(x)
+        y=self.shot_choices[0][1]
+
+        
+        '''
+        for row in lines:
+            new_row=[]
+            if row.count(1)>0:
+                ini=row.index(1)
+                new_row=row[ini:ini+5]
+                if row[ini-1]==6:
+                    new_row.pop()
+                    new_row=[6]+new_row
+                if len(new_row)<5:
+                    new_row=[0]*(5-len(new_row))+new_row
+            else:
+                new_row=[0 for _ in range(0,5)]
+            new_matrix.append(new_row)'''
+
+        for i,row in enumerate(lines):
+            new_row=[]
+            if i==y:
+                new_row=row[x:x+5]
+                if  row[x-1]==6 or row[x-1]==1:
+                    new_row.pop()
+                    new_row=[row[x-1]]+new_row
+                if len(new_row)<5:
+                    new_row=[0]*(5-len(new_row))+new_row
+
+                print(letters[x],i)
+                print(new_row)
+            else:
+                new_row=[0 for _ in range(0,5)]
+            new_matrix.append(new_row)
+        return new_matrix
 
     def get_last_gotcha(self,matriz):
-        matrix=self.translate_matrix(matriz)
+        matrix=[]
+        if self.act=='nv':
+            matrix=self.translate_matrix(matriz)
+        else:
+            matrix=self.translate_matrix2(matriz)
         gotchas=self.shot_choices
 
         letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
@@ -240,8 +314,13 @@ class IA:
         x=letters.index(gotchas[len(gotchas)-1][0])
         y=gotchas[len(gotchas)-1][1]
         
-        previsao=sorted(self.model.predict(matrix))
-        previsao=previsao.pop()
+        #previsao=sorted(self.model.predict(matrix))
+        #previsao=previsao.pop()
+        previsao=self.model.predict(matrix)
+
+        if y==15:
+            y-=1
+        previsao=previsao[y]
 
         if previsao<3:
             if x<13:
@@ -406,8 +485,8 @@ for i,navio in enumerate(ch_navios):
     m_player.insert(navios[navio],pos[i],0)
 m_player.map_navs()
 
-ia=IA()
-p2=IA()
+p1=IA('nv')
+p2=IA('knn')
 rounds=0
 
 from copy import deepcopy
@@ -415,11 +494,11 @@ import time
 
 while True:
     if m_player.verify_lose():
-        print('IA 2 venceu')
+        print('P2 Venceu /Erros de P1: ',m_player.count_erros(),'/Erros de P2: ',m_enemy.count_erros())
         m_player.create_arq()
         break
     if m_enemy.verify_lose():
-        print('IA 1 venceu')
+        print('P1 Venceu /Erros de P1: ',m_player.count_erros(),'/Erros de P2: ',m_enemy.count_erros())
         m_player.create_arq()
         break
 
@@ -438,27 +517,29 @@ while True:
     else:
         m_player.get_erro(pos)'''
         
-    pos=p2.atack_ia(deepcopy(m_player.m_check))
+    pos=p1.atack_ia(deepcopy(m_player.m_check))
     if m_enemy.verify_pos(pos):
         m_enemy.kill_pos(pos)
-        p2.get_turn((True,pos[0],pos[1]))
+        p1.get_turn((True,pos[0],pos[1]))
         m_player.insert_on_mcheck(pos)
     else:
-        p2.get_turn((False,pos[0],pos[1]))
-        if p2.shot_choices!=[]:
+        p1.get_turn((False,pos[0],pos[1]))
+        if p1.shot_choices!=[]:
             m_player.get_erro(pos)
-    print(p2.shot_choices)
-
     
-    pos_ia=ia.atack_ia(deepcopy(m_enemy.m_check))
+    pos_ia=p2.atack_ia(deepcopy(m_enemy.m_check))
     if m_player.verify_pos(pos_ia):
         m_player.kill_pos(pos_ia)
-        ia.get_turn((True,pos_ia[0],pos_ia[1]))
+        p2.get_turn((True,pos_ia[0],pos_ia[1]))
         m_enemy.insert_on_mcheck(pos_ia)
     else:
-        ia.get_turn((False,pos_ia[0],pos_ia[1]))
-        if ia.shot_choices!=[]:
+        p2.get_turn((False,pos_ia[0],pos_ia[1]))
+        if p2.shot_choices!=[]:
             m_enemy.get_erro(pos_ia)
     rounds+=1
     print('Rounds: ',rounds)
+    print('##### P1 (NV) #####')
     m_player.draw_two()
+    print('##### P2 (KNN) #####')
+    print(p2.shot_choices)
+    m_enemy.draw_two()
