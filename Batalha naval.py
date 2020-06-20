@@ -229,20 +229,50 @@ def choose_navios():
 
     return navios        
 
-def try_put_in(pos):
-    navios=[[-2,1],[-3,3]]#[5,1],[2,3],[4,2]
-    positions=[]
-    en=5
-    ds=2
-    cr=4
-    sub=-2
-    hd=-3
-    for item in pos:
-        for ss in item:
-            if item==ss+1:
-                NotImplemented
+def is_collide(nav,pos):
+    if nav=='hidroaviao':
+        if pos[0]>'A' and pos[0]<'N' and pos[1]>0 and pos[1]<15:
+            return False
+        else:
+            return True
+    if nav=='submarino':
+        if pos[1]>0 and pos[1]<14:
+            return False
+        else:
+            True
+    else:
+        return False
 
-                
+def try_put_in(positions):
+    couraçado=('█████','couraçado')#1
+    cruzador=('████','cruzador')#2
+    destroyer=('██','destroyer')#3
+    submarino=('██\n██','submarino')#1
+    hidroaviao=(' █ \n█ █','hidroaviao')#3
+
+    navios=[[hidroaviao,3],[submarino,1],[couraçado,1],[destroyer,3],[cruzador,2]]
+
+    letters=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+
+    selected_pos=[]
+    solucao=[]
+    for navio in navios:
+        for _ in range(navio[1]):
+            for pos in positions:
+                if not pos in selected_pos and not is_collide(navio[1],pos):
+                    selected_pos.append(pos)
+                    solucao.append((navio[0],pos))
+                    if navio[0][1]=='hidroaviao':
+                        index=letters.index(pos[0])
+                        selected_pos.append((letters[index+1],pos[1]+1))
+                        selected_pos.append((letters[index-1],pos[1]+1))
+                    elif navio[0][1]=='submarino':
+                        index=letters.index(pos[0])
+                        selected_pos.append((letters[index+1],pos[1]+1))
+                        selected_pos.append((pos[0],pos[1]+1))
+                    break
+    
+    return solucao
 
 def choice_pos():
     import os
@@ -259,6 +289,15 @@ def choice_pos():
     return saida
 
 def choice_pos_p1():
+    couraçado=('█████','couraçado')#1
+    cruzador=('████','cruzador')#2
+    destroyer=('██','destroyer')#3
+    submarino=('██\n██','submarino')#1
+    hidroaviao=(' █ \n█ █','hidroaviao')#3
+
+    navios=[[hidroaviao,3],[submarino,1],[couraçado,1],[destroyer,3],[cruzador,2]]
+
+    qntd=[1,2,3,1,3]
     for _ in range(0,10):
         print('Couraçado = ',0,'qntd:',qntd[0],'/Cruzador = ',1,'qntd:',qntd[1])
         print('Destroyer = ',2,'qntd:',qntd[2],'/Submarino = ',3,'qntd:',qntd[3],'/Hidroaviao = ',4,'qntd:',qntd[4])
@@ -286,32 +325,30 @@ def choice_pos_p1():
     m_player.insert(navios[navio],pos,0)
     m_player.draw()
 
+def count_equals(lista):
+    new_list=[]
+
+    for item in lista:
+        x=lista.count(item)
+        if x>1:
+            new_list.append((item,x))
+
+    print(new_list,len(new_list))
 
 pos=choice_pos()
-ch_navios=choose_navios()
-
-couraçado=('█████','couraçado')#1
-cruzador=('████','cruzador')#2
-destroyer=('██','destroyer')#3
-submarino=('██\n██','submarino')#1
-hidroaviao=(' █ \n█ █','hidroaviao')#3
-navios=[couraçado,cruzador,destroyer,submarino,hidroaviao]
-
+solucao=try_put_in(pos)
 m_enemy=Matriz('Sua Esquadra')
 
-for i,navio in enumerate(ch_navios):
-    m_enemy.insert(navios[navio],pos[i],0)
+for item in solucao:
+    m_enemy.insert(item[0],item[1],0)
 m_enemy.map_navs()
 
-qntd=[1,2,3,1,3]
-
 m_player=Matriz('Sua Esquadra')
+pos2=choice_pos()
+solucao2=try_put_in(pos2)
 
-pos=choice_pos()
-ch_navios=choose_navios()
-
-for i,navio in enumerate(ch_navios):
-    m_player.insert(navios[navio],pos[i],0)
+for item in solucao2:
+    m_player.insert(item[0],item[1],0)
 m_player.map_navs()
 
 from Modelos import *
@@ -327,10 +364,12 @@ while True:
     if m_player.verify_lose():
         print(p2.name,'Venceu /Erros de P1: ',len(p1.last_choices),'/Erros de P2: ',len(p2.last_choices))
         m_player.create_arq()
+        count_equals(p2.last_choices)
         break
     if m_enemy.verify_lose():
         print(p1.name,'Venceu /Erros de P1: ',len(p1.last_choices),'/Erros de P2: ',len(p2.last_choices))
         m_player.create_arq()
+        count_equals(p1.last_choices)
         break
 
     '''
