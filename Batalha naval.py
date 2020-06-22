@@ -335,6 +335,23 @@ def count_equals(lista):
 
     print(new_list,len(new_list))
 
+def get_pos_player():
+    while True:
+        pos=str(input('Digite a posição: '))
+        pos=pos.upper()
+        if len(pos)==2:
+            pos=pos[0]+' '+pos[1]
+        else:
+            pos=pos[0]+' '+pos[1]+pos[2]
+        pos=pos.split()
+
+        pos[1]=int(pos[1])
+        if pos[0]>='A'and pos[0]<='N' and pos[1]>=1 and pos[1]<=15:
+            return pos
+        else:
+            print('Posição não existe')
+
+
 pos=choice_pos()
 solucao=try_put_in(pos)
 m_enemy=Matriz('Sua Esquadra')
@@ -372,21 +389,13 @@ while True:
         count_equals(p1.Choicer.last_choices)
         break
 
-    '''
-    pos=str(input('Digite a posição: '))
-    pos=pos.upper()
-    if len(pos)==2:
-        pos=pos[0]+' '+pos[1]
-    else:
-        pos=pos[0]+' '+pos[1]+pos[2]
-    pos=pos.split()
-
-    pos[1]=int(pos[1])
+    
+    pos=get_pos_player()
     if m_enemy.verify_pos(pos):
         m_player.insert_on_mcheck(pos)
     else:
-        m_player.get_erro(pos)'''
-        
+        m_player.get_erro(pos)
+    '''    
     pos=p1.atack_ia(deepcopy(m_player.m_check))
     if m_enemy.verify_pos(pos):
         m_enemy.kill_pos(pos)
@@ -396,7 +405,7 @@ while True:
         p1.get_turn((False,pos[0],pos[1]))
         if p1.Choicer.gotchas!=[]:
             m_player.get_erro(pos)
-    
+    '''
     pos_ia=p2.atack_ia(deepcopy(m_enemy.m_check))
     if m_player.verify_pos(pos_ia):
         m_player.kill_pos(pos_ia)
@@ -409,7 +418,4 @@ while True:
     rounds+=1
     print('Rounds: ',rounds)
     print('##### P1 #####')
-    #m_player.draw_two()
-    print('##### P2 #####')
-    print(p2.Choicer.gotchas)
-    m_enemy.draw_two()
+    m_player.draw_two()
