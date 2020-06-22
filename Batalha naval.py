@@ -353,7 +353,7 @@ m_player.map_navs()
 
 from Modelos import *
 
-p1=Fanzenlos()
+p1=Dralar()
 p2=Aelos()
 rounds=0
 
@@ -362,14 +362,14 @@ import time
 
 while True:
     if m_player.verify_lose():
-        print(p2.name,'Venceu /Erros de P1: ',len(p1.last_choices),'/Erros de P2: ',len(p2.last_choices))
+        print(p2.name,'Venceu')
         m_player.create_arq()
-        count_equals(p2.last_choices)
+        count_equals(p2.Choicer.last_choices)
         break
     if m_enemy.verify_lose():
-        print(p1.name,'Venceu /Erros de P1: ',len(p1.last_choices),'/Erros de P2: ',len(p2.last_choices))
+        print(p1.name,'Venceu')
         m_player.create_arq()
-        count_equals(p1.last_choices)
+        count_equals(p1.Choicer.last_choices)
         break
 
     '''
@@ -394,7 +394,7 @@ while True:
         m_player.insert_on_mcheck(pos)
     else:
         p1.get_turn((False,pos[0],pos[1]))
-        if p1.shot_choices!=[]:
+        if p1.Choicer.gotchas!=[]:
             m_player.get_erro(pos)
     
     pos_ia=p2.atack_ia(deepcopy(m_enemy.m_check))
@@ -404,12 +404,12 @@ while True:
         m_enemy.insert_on_mcheck(pos_ia)
     else:
         p2.get_turn((False,pos_ia[0],pos_ia[1]))
-        if p2.shot_choices!=[]:
+        if p2.Choicer.gotchas!=[]:
             m_enemy.get_erro(pos_ia)
     rounds+=1
     print('Rounds: ',rounds)
     print('##### P1 #####')
     #m_player.draw_two()
     print('##### P2 #####')
-    print(p2.shot_choices)
+    print(p2.Choicer.gotchas)
     m_enemy.draw_two()
